@@ -1,4 +1,4 @@
-# Room Security app (Expo SDK 58), v0.7.2
+# Room Security app (Expo SDK 58), v0.7.3
 
 The phone app for the room security system: arm and disarm, see every sensor, read the activity timeline, watch the camera live and turn it, replay the recordings of an incident, set the schedule and vacation mode. It works against the [Raspberry Pi service](../sentinel/) and the [ESP32 smoke detector](../firmware/esp32-smoke-detector/).
 

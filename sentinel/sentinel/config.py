@@ -21,8 +21,8 @@ DEFAULTS: dict = {
         "duration_s": 120,
         "test_s": 3,
         "settings": {
-            "alarm_sound_enable": True,
-            "alarm_light_enable": True,
+            "alarm_sound_enable": "ON",       # Zigbee2MQTT wants "ON"/"OFF" here: a true/false value switches it OFF
+            "alarm_light_enable": "ON",
             "alarm_volume_level": "max",
         },
     },

@@ -89,8 +89,10 @@ def test_siren_payloads():
     snzb = DEFAULTS["siren"]
     on = siren_payloads(snzb, True, 60)
     assert on[0]["alarm_duration"] == 60 and on[0]["alarm_volume_level"] == "max"
-    assert on[0]["alarm_sound_enable"] is True and on[0]["alarm_light_enable"] is True   # SNZB-09P is silent if these are off
+    assert on[0]["alarm_sound_enable"] == "ON" and on[0]["alarm_light_enable"] == "ON"   # SNZB-09P is silent if these are OFF
     assert on[1] == {"siren_on": "ON"}
+    old = {**snzb, "settings": {"alarm_sound_enable": True, "alarm_light_enable": False}}     # booleans from an old config
+    assert siren_payloads(old, True, 5)[0]["alarm_sound_enable"] == "ON" and siren_payloads(old, True, 5)[0]["alarm_light_enable"] == "OFF"
     assert siren_payloads(snzb, False) == [{"siren_on": "OFF"}]
     warn = {**snzb, "type": "warning"}
     assert siren_payloads(warn, True, 30)[0]["warning"]["duration"] == 30

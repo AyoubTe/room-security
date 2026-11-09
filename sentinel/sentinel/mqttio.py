@@ -70,7 +70,11 @@ def siren_payloads(siren: dict, on: bool, duration: float | None = None, volume:
     if on:
         # The SNZB-09P sounds "siren_on" with whatever it is configured to use, and the sound and light
         # switches can be OFF (a factory state, or switched off by hand): then nothing is heard. So switch them on every time.
-        settings = {"alarm_sound_enable": True, "alarm_light_enable": True, **siren.get("settings", {})}
+        # Zigbee2MQTT reads these two as "ON"/"OFF" text: a true/false value ends up OFF, so convert it.
+        settings = {"alarm_sound_enable": "ON", "alarm_light_enable": "ON", **siren.get("settings", {})}
+        for key in ("alarm_sound_enable", "alarm_light_enable"):
+            if isinstance(settings.get(key), bool):
+                settings[key] = "ON" if settings[key] else "OFF"
         if volume:
             settings["alarm_volume_level"] = volume
         return [{**settings, "alarm_duration": dur}, {"siren_on": "ON"}]
