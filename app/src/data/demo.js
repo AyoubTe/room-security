@@ -36,7 +36,7 @@ const DEFAULT_SETTINGS = () => ({
     pre_arm_warning_min: 10,
     vacation: { active: false, since: null, until: null },
   },
-  camera: { follow: true, views: { door: 3, window: 2, motion: 1 } },
+  camera: { follow: true, views: { door: 3, window: 2, motion: 1 }, return_view: 1, return_after_s: 120 },
   cloud: { retention_days: 15 },
   siren: { mode: 'quiet_hours', quiet_hours: { start: '22:00', end: '07:00' }, volume: 'max', duration_s: null },
   timing: { exit_delay_s: null, entry_delay_s: null },

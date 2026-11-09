@@ -136,6 +136,9 @@ Check it: `sudo -u sentinel rclone --config /var/lib/sentinel/rclone.conf lsd gd
 - **Camera follows**: save three views on the Camera screen (for example Centre, Window, Door), then
   Settings, Camera follows the intrusion: pick the view for each sensor. When a sensor triggers an alarm
   the Pi turns the camera to that view (needs the camera controls above to work).
+- **Return to**: in the same screen choose the view the camera goes back to (for example Centre) once the
+  intrusion has been quiet for 1, 2 or 5 minutes. The quiet time starts when the alarm ends, and the camera
+  is left alone if you turned it yourself in the meantime.
 - **Watch recordings in the app**: Activity, tap an alarm, Recordings. Clips stream through the Pi from
   Google Drive (`rclone cat`), so Drive stays private and you never open it. Clips not uploaded yet play from the Pi.
 - **Nightly clean-up** at `cloud.cleanup_at` (03:30): event folders and alerts older than the keep time

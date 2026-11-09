@@ -412,3 +412,69 @@ def test_api_lists_clips_streams_ranges_and_runs_cleanup(tmp_path, drive):
             S.store.db.close()
 
     asyncio.run(run())
+
+
+def test_camera_turns_back_after_the_intrusion_has_been_quiet(tmp_path):
+    async def run():
+        cam = FakeCamera()
+        server = await camera_server(cam)
+        clock = Clock("2026-11-04 22:00")
+        cfg = cfg_for(tmp_path)
+        cfg["camera"]["rtsp_sub"] = "rtsp://admin:test-camera-pass@127.0.0.1:554/Preview_01_sub"
+        cfg["camera"]["ptz"]["port"] = server.port
+        S = Sentinel(cfg, asyncio.get_running_loop(), clock=clock, mqtt=False)
+        S.z2m = FakeZ2M()
+        try:
+            S.update_settings({"camera": {"views": {"window": 2, "motion": 1}, "return_view": 1, "return_after_s": 60}})
+            assert S.settings["camera"]["return_view"] == 1 and S.settings["camera"]["return_after_s"] == 60
+            for bad in ({"return_after_s": 5}, {"return_view": 99}):
+                with pytest.raises(ValueError):
+                    S.update_settings({"camera": bad})
+
+            async def settle():
+                await asyncio.sleep(0.3)
+
+            S.cmd_arm(force=True)
+            run_to(S, clock, "2026-11-04 22:02", step=5)
+            S.on_values("window", {"contact": False})
+            await settle()
+            assert cam.log == [("ToPos", 2)]
+            assert S.engine.state == "alarm"
+
+            run_to(S, clock, "2026-11-04 22:04", step=5)           # alarm still going on: stays on the window
+            await settle()
+            assert cam.log == [("ToPos", 2)]
+
+            S.cmd_disarm()                                         # the intrusion is over
+            run_to(S, clock, "2026-11-04 22:04", step=5)
+            clock.plus(30)
+            S.tick_once()
+            await settle()
+            assert cam.log == [("ToPos", 2)]                       # not quiet for a minute yet
+            clock.plus(40)
+            S.tick_once()
+            await settle()
+            assert cam.log == [("ToPos", 2), ("ToPos", 1)]         # back to Centre
+            assert any("back to saved view 1" in e["text"] for e in S.store.recent(50))
+            clock.plus(300)
+            S.tick_once()
+            await settle()
+            assert cam.log.count(("ToPos", 1)) == 1                # only once
+
+            # someone turns the camera by hand while it is quiet: it is left alone
+            S.cmd_arm(force=True)
+            run_to(S, clock, "2026-11-04 23:00", step=5)
+            S.on_values("window", {"contact": False})
+            await settle()
+            await S.ptz.goto(3)                                    # manual move from the app
+            S.cmd_disarm()
+            clock.plus(120)
+            S.tick_once()
+            await settle()
+            assert cam.log[-1] == ("ToPos", 3)
+        finally:
+            await S.ptz.close()
+            await server.close()
+            S.store.db.close()
+
+    asyncio.run(run())

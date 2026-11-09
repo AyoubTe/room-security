@@ -83,6 +83,8 @@ class Sentinel:
         self.arm_preset = ptz_cfg["arm_preset"] if ptz_cfg else 0
         self.cloud = CloudFs(cfg, clock)
         self._aimed: tuple[str, float] | None = None
+        self._return_at: float | None = None      # when the camera should turn back after an intrusion
+        self._aim_cmds = 0
         self.z2m = Z2M(cfg, loop, self.on_values, self.on_avail, self.on_bridge) if mqtt else None
 
         self.queue: asyncio.Queue = asyncio.Queue()           # recorder work (slow), in order
@@ -123,6 +125,7 @@ class Sentinel:
 
     def _park_camera(self) -> None:
         """Turn the camera back to the saved watch position when the room is armed (camera.ptz.arm_preset)."""
+        self._return_at = None                        # arming sets the watch position itself
         if not (self.ptz and self.arm_preset):
             return
 
@@ -136,6 +139,33 @@ class Sentinel:
         self._bg.add(t)
         t.add_done_callback(self._bg.discard)
 
+    def _maybe_return(self, now: float) -> None:
+        """Once the intrusion has been quiet for a while, turn the camera back to the chosen view."""
+        if self._return_at is None or now < self._return_at:
+            return
+        cam = self.settings["camera"]
+        if self.engine.state in ("alarm", "entry_delay"):
+            self._return_at = now + cam["return_after_s"]      # still going on: the quiet time starts when it ends
+            return
+        self._return_at = None
+        view = cam["return_view"]
+        if not (self.ptz and cam["follow"] and view is not None):
+            return
+        if self.ptz.cmds != self._aim_cmds:
+            return                                    # someone moved the camera since: do not fight them
+
+        async def go():
+            try:
+                await self.ptz.goto(view)
+                self._aim_cmds = self.ptz.cmds
+                self.store.add_log("camera", f"Camera back to saved view {view}", None, ts=self.clock())
+            except PtzError as exc:
+                log.warning("could not turn the camera back to view %s: %s", view, exc.detail)
+
+        t = self.loop.create_task(go())
+        self._bg.add(t)
+        t.add_done_callback(self._bg.discard)
+
     def _aim_camera(self, sensor: str) -> None:
         """Turn the camera to the saved view picked for this sensor (settings.camera.views)."""
         cam = self.settings["camera"]
@@ -143,6 +173,8 @@ class Sentinel:
         if not (self.ptz and cam["follow"] and view is not None):
             return
         now = self.clock()
+        if cam["return_view"] is not None:
+            self._return_at = now + cam["return_after_s"]      # every new trigger pushes the return back
         if self._aimed and self._aimed[0] == sensor and now - self._aimed[1] < 20:
             return                                    # already looking there
         self._aimed = (sensor, now)
@@ -150,6 +182,7 @@ class Sentinel:
         async def go():
             try:
                 await self.ptz.goto(view)
+                self._aim_cmds = self.ptz.cmds
                 self.store.add_log("camera", f"Camera turned to saved view {view} ({sensor})", None, ts=self.clock())
             except PtzError as exc:
                 log.warning("could not turn the camera to view %s: %s", view, exc.detail)
@@ -675,6 +708,7 @@ class Sentinel:
         self._maintain_bypass(now)
         self._schedule_tick(now)
         self.engine.tick(now)
+        self._maybe_return(now)
         self.flush()
 
     async def _tick_loop(self) -> None:

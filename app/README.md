@@ -1,4 +1,4 @@
-# Room Security app (Expo SDK 58), v0.7.0
+# Room Security app (Expo SDK 58), v0.7.1
 
 The phone app for the room security system: arm and disarm, see every sensor, read the activity timeline, watch the camera live and turn it, replay the recordings of an incident, set the schedule and vacation mode. It works against the [Raspberry Pi service](../sentinel/) and the [ESP32 smoke detector](../firmware/esp32-smoke-detector/).
 
@@ -59,7 +59,7 @@ Screens never call the network directly; they use `useData()`, so the real and d
 ## Features worth knowing
 
 - **Camera direction:** while the live view plays, a direction pad appears under the video (hold a button to keep turning, let go to stop), with a speed switch and **saved views**: point the camera, press *Save this view*, return to it with one tap (hold a view to delete it). The screen stays awake while you watch.
-- **Camera follows the intrusion:** Settings -> *Camera follows the intrusion* picks the saved view for each sensor; the Pi turns the camera there when that sensor raises an alarm.
+- **Camera follows the intrusion:** Settings -> *Camera follows the intrusion* picks the saved view for each sensor; the Pi turns the camera there when that sensor raises an alarm, and can turn it back to a chosen view once things are quiet.
 - **Recordings in the app:** Activity -> tap an alarm -> *Recordings*. Clips are streamed through the Pi from the cloud storage, so you never open Drive.
 - **Recordings and storage:** keep time (default 15 days), space used, *Clean up now*. A nightly job on the Pi deletes older recordings and alerts.
 - **Vacation mode** (Schedule screen): armed day and night; windows and days at home are ignored and the nightly clean-up is paused.

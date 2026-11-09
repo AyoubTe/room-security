@@ -6,6 +6,7 @@ import { Button, Card, Choice, Icon, Pill, Screen, T, Toggle, useFeedback } from
 
 // Saved views can be numbered from 0 on some cameras, so "none" must not be 0.
 const NONE = -1;
+const DELAYS = [{ value: 60, label: '1 min' }, { value: 120, label: '2 min' }, { value: 300, label: '5 min' }];
 
 /** Which saved camera view each sensor turns the camera to when it detects an intrusion. */
 export default function CameraFollow() {
@@ -65,6 +66,24 @@ export default function CameraFollow() {
           </Card>
         );
       })}
+
+      {views && views.length > 0 && (
+        <Card style={{ gap: 10, opacity: cam.follow ? 1 : 0.55 }}>
+          <View>
+            <T v="bodyStrong">Return to</T>
+            <T v="small" color="muted">When the intrusion is over, turn the camera back to this view.</T>
+          </View>
+          <Choice options={options.map(o => (o.value === NONE ? { ...o, label: 'Stay there' } : o))} value={cam.return_view ?? NONE} disabled={!cam.follow}
+            onChange={v => save({ return_view: v === NONE ? null : v })} />
+          {cam.return_view != null && (
+            <>
+              <T v="smallStrong">After it has been quiet for</T>
+              <Choice options={DELAYS} value={cam.return_after_s ?? 120} disabled={!cam.follow} onChange={v => save({ return_after_s: v })} />
+              <T v="caption" color="muted">The camera is left alone if you turned it yourself in the meantime.</T>
+            </>
+          )}
+        </Card>
+      )}
 
       <Card style={{ flexDirection: 'row', gap: 10 }}>
         <Icon name="information-outline" color="faint" size={18} />

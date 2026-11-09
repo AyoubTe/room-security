@@ -76,6 +76,7 @@ class ReolinkPtz:
         self._token_until = 0.0
         self._lock = asyncio.Lock()               # one command at a time: ordering matters for move/stop
         self._stop_task: asyncio.Task | None = None
+        self.cmds = 0                              # counts moves and go-to commands: lets callers tell whether someone else moved the camera
         self.speed_name = self.s["speed"] if self.s["speed"] in SPEEDS else "normal"
 
     # ------------------------------------------------------------ transport
@@ -136,6 +137,7 @@ class ReolinkPtz:
         if op is None:
             raise PtzError("bad_direction")
         seconds = min(max(float(seconds), 0.1), MAX_MOVE_S)
+        self.cmds += 1
         async with self._lock:
             self._cancel_stop()
             await self._call("PtzCtrl", 0, {"channel": self.s["channel"], "op": op, "speed": self.speed_value(speed)})
@@ -162,6 +164,7 @@ class ReolinkPtz:
 
     async def goto(self, preset_id: int) -> None:
         self._check_id(preset_id)
+        self.cmds += 1
         async with self._lock:
             self._cancel_stop()
             await self._call("PtzCtrl", 0, {

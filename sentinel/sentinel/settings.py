@@ -33,7 +33,7 @@ DEFAULTS: dict = {
         "vacation": {"active": False, "since": None, "until": None},   # until: epoch, None = until switched off
     },
     # Which saved camera view to turn to when a sensor triggers: {"door": 3, "window": 2, "motion": 1}
-    "camera": {"follow": True, "views": {}},
+    "camera": {"follow": True, "views": {}, "return_view": None, "return_after_s": 120},
     # Recordings and alerts older than this are deleted every night (0 = keep everything). Paused on vacation.
     "cloud": {"retention_days": 15},
     "siren": {
@@ -189,6 +189,10 @@ def validate(s: dict, sensor_names: list[str], tz: tzinfo, now: float) -> dict:
         pid = _int(pid, f"saved view for {name}", 0, 64, allow_none=True)
         if pid is not None:
             out["camera"]["views"][name] = pid
+
+    # After the intrusion ends, turn back to this saved view (None = stay where it is) once it has been quiet this long.
+    out["camera"]["return_view"] = _int(ca.get("return_view"), "camera return view", 0, 64, allow_none=True)
+    out["camera"]["return_after_s"] = _int(ca.get("return_after_s", 120), "camera return delay", 30, 1800)
 
     out["cloud"]["retention_days"] = _int(s.get("cloud", {}).get("retention_days", 15), "retention days", 0, 365)
 
