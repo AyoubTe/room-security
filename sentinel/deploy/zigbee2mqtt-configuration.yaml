@@ -1,0 +1,48 @@
+# /opt/zigbee2mqtt/data/configuration.yaml  (first-run template)
+# If Zigbee2MQTT rewrites this file on first start, keep what it adds and just make
+# sure the values below are set. Docs: https://www.zigbee2mqtt.io/guide/configuration/
+
+version: 5
+homeassistant:
+  enabled: false
+permit_join: false            # turn on only from the Zigbee2MQTT web UI while pairing
+
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://localhost:1883
+
+serial:
+  # Find yours with:  ls /dev/serial/by-id/
+  port: /dev/serial/by-id/REPLACE_WITH_YOUR_DONGLE
+  adapter: ember              # Sonoff ZBDongle-E (EFR32MG21). For a ZBDongle-P use: zstack
+
+frontend:
+  enabled: true
+  port: 8081
+
+availability:
+  enabled: true               # lets the system warn you when a sensor goes silent
+
+advanced:
+  channel: 25                 # far from Wi-Fi channels 1/6/11
+  network_key: GENERATE
+  pan_id: GENERATE
+  ext_pan_id: GENERATE
+  log_level: info
+
+# After pairing, rename each device here (or in the web UI) to match config.yaml, and add
+# retain: true so the sensors' last state is available to the sentinel after a restart.
+devices: {}
+# Example after pairing:
+# devices:
+#   '0x00124b0000000001':
+#     friendly_name: door_contact
+#     retain: true
+#   '0x00124b0000000002':
+#     friendly_name: window_contact
+#     retain: true
+#   '0x00124b0000000003':
+#     friendly_name: motion
+#     retain: true
+#   '0x00124b0000000004':
+#     friendly_name: siren

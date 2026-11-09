@@ -1,0 +1,18 @@
+[Unit]
+Description=Room security sentinel
+After=network-online.target mosquitto.service zigbee2mqtt.service
+Wants=network-online.target
+
+[Service]
+User=sentinel
+Group=sentinel
+WorkingDirectory=/opt/sentinel
+ExecStart=/opt/sentinel/venv/bin/python -m sentinel --config /etc/sentinel/config.yaml
+Restart=always
+RestartSec=3
+# ffmpeg children are stopped with the service
+KillMode=control-group
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

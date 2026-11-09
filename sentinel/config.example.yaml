@@ -1,0 +1,74 @@
+# Copy to /etc/sentinel/config.yaml and edit. Everything not listed uses the built-in default.
+
+api:
+  port: 8088
+  # Long random secret. Generate one with:  openssl rand -hex 24
+  # The same value goes into the app (src/config.js -> SENTINEL_TOKEN).
+  token: "CHANGE_ME"
+
+# Time zone used by the schedule and quiet hours. Empty = the Pi's own zone.
+timezone: "Europe/Paris"
+
+# Zigbee2MQTT runs on the same Pi, so MQTT is local.
+mqtt:
+  host: 127.0.0.1
+  port: 1883
+  base_topic: zigbee2mqtt
+
+# "name" is what the app shows/uses; "z2m" must match the friendly_name in Zigbee2MQTT.
+# entry_delay: true  -> opening it starts the entry delay (time to disarm from your phone).
+# entry_delay: false -> opening it triggers the alarm immediately.
+sensors:
+  - { name: door,   z2m: door_contact,   kind: contact, label: Door,   entry_delay: true }
+  - { name: window, z2m: window_contact, kind: contact, label: Window, entry_delay: false }
+  - { name: motion, z2m: motion,         kind: motion,  label: Motion, entry_delay: true }
+
+# Schedules, days at home, silent/quiet-hours siren, volume, delays and per-sensor on/off are
+# changed from the app (Settings tab) and stored on the Pi. The values here are only the defaults.
+siren:
+  enabled: true
+  z2m: siren
+  type: siren_on        # Sonoff SNZB-09P. For Heiman/Neo and most other sirens use: warning
+  duration_s: 120       # how long it sounds per alarm
+
+timing:
+  exit_delay_s: 45      # time to leave the room after pressing Arm
+  entry_delay_s: 30     # time to disarm after the door opens
+  post_roll_s: 600      # keep recording this long after the LAST detected activity (10 min)
+  max_event_s: 3600     # hard cap per recorded event (a new one starts if activity continues)
+
+camera:
+  # Test both URLs in VLC first. Special characters in the password must be URL-encoded
+  # (@ -> %40, # -> %23, ...). Older Reolink firmware uses /h264Preview_01_main instead.
+  rtsp_main: "rtsp://admin:PASSWORD@192.168.1.60:554/Preview_01_main"
+  rtsp_sub:  "rtsp://admin:PASSWORD@192.168.1.60:554/Preview_01_sub"
+  preroll_s: 30         # footage kept from before the first trigger
+  # Turn the camera from the app. The camera's address, user and password are taken from
+  # rtsp_main above, so normally there is nothing to add. Needs "HTTP" enabled on the camera
+  # (default). Uncomment only what you need:
+  # ptz:
+  #   enabled: true       # false hides the direction pad in the app
+  #   speed: normal       # default speed: slow | normal | fast (the app remembers its own choice)
+  #   arm_preset: 0       # saved view (1-64) the camera turns to whenever the room is armed; 0 = off
+  #   host: 192.168.1.60  # only if it differs from the rtsp_main address
+  #   port: 80
+
+cloud:
+  # rclone remote:folder. Leave empty to keep clips on the Pi's SD card only.
+  remote: "gdrive:SecurityCam"
+  rclone_config: /var/lib/sentinel/rclone.conf
+  chunk_s: 60           # a clip part is uploaded every 60 s during an alarm
+  cleanup_at: "03:30"   # every night at this time, recordings and alerts older than the keep time are deleted
+  # The keep time (default 15 days) is set in the app: Settings, Recordings and storage.
+  # Deleting skips the Drive bin so space is freed at once: purge_args: ["--drive-use-trash=false"]
+
+push:
+  enabled: true
+
+# Optional dead-man's switch: create a check at healthchecks.io (period 2 min) and paste its ping URL.
+# You get an email if the Pi, its internet or the power goes down.
+healthchecks_url: ""
+
+live:
+  # {host} is replaced by the address the app used to reach the Pi (LAN IP or Tailscale route).
+  hls_url: "http://{host}:1984/api/stream.m3u8?src=room_sub&mp4"

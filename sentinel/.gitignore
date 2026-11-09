@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+# Your real configuration holds the API token and the camera password
+config.yaml

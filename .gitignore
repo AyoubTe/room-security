@@ -1,0 +1,13 @@
+.DS_Store
+Thumbs.db
+*.zip
+
+# secrets and local settings, never commit
+google-services.json
+GoogleService-Info.plist
+*service-account*.json
+firebase-adminsdk*.json
+rclone.conf
+config.yaml
+*.env
+.env*

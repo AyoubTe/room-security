@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Room Security",
+    "slug": "room-security",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/logo/icon.png",
+    "android": {
+      "package": "com.example.roomsecurity"
+    },
+    "ios": {
+      "bundleIdentifier": "com.example.roomsecurity"
+    },
+    "plugins": ["expo-font"]
+  }
+}

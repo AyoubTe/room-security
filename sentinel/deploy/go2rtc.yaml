@@ -1,0 +1,13 @@
+# Live view for the app. go2rtc only connects to the camera while someone is watching.
+# It uses the camera's low-resolution "sub" stream (H.264, light on Wi-Fi and phone data).
+api:
+  listen: ":1984"
+
+# The app uses HLS over the API port; RTSP and WebRTC are not needed.
+rtsp:
+  listen: "127.0.0.1:8554"
+webrtc:
+  listen: ""
+
+streams:
+  room_sub: rtsp://admin:PASSWORD@192.168.1.60:554/Preview_01_sub

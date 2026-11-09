@@ -1,0 +1,13 @@
+[Unit]
+Description=go2rtc (on-demand live view)
+After=network-online.target
+
+[Service]
+User=sentinel
+Group=sentinel
+ExecStart=/usr/local/bin/go2rtc -config /etc/sentinel/go2rtc.yaml
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
