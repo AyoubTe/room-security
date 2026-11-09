@@ -5,11 +5,12 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useAppTheme } from '../theme/ThemeProvider.js';
 import { useData, useServerNow } from '../data/DataProvider.js';
-import { Button, Card, Group, Icon, Pill, Row, Screen, T, useFeedback } from '../ui/index.js';
+import { Button, Card, Group, Icon, IconButton, Pill, Row, Screen, T, useFeedback } from '../ui/index.js';
 import { fmtClock } from '../format.js';
 import PtzControls from './PtzControls.js';
 
 const KEEP_AWAKE = 'live-camera';
+const ZOOMS = [1, 1.5, 2, 3, 4];   // digital zoom steps: the picture is enlarged on the phone
 const clamp = v => Math.max(-1, Math.min(1, v));
 const FRAME = { width: '100%', aspectRatio: 16 / 9, borderRadius: 16, overflow: 'hidden', backgroundColor: '#000' };
 
@@ -52,6 +53,8 @@ export default function Camera() {
   const [url, setUrl] = useState(null);
   const [src, setSrc] = useState(() => client.snapshotSource());
   const [attempt, setAttempt] = useState(0);
+  const [zoomIdx, setZoomIdx] = useState(0);
+  const zoom = ZOOMS[zoomIdx];
   const [pan, setPan] = useState({ x: 0, y: 0 });   // demo mode only: the sample picture shifts as if the camera turned
 
   // Refresh the still every few seconds while the screen is open and no video is playing.
@@ -73,7 +76,7 @@ export default function Camera() {
     }
   }, [client, isDemo, toast]);
 
-  const stop = () => { setMode('snapshot'); setUrl(null); setPan({ x: 0, y: 0 }); setSrc(client.snapshotSource()); };
+  const stop = () => { setZoomIdx(0); setMode('snapshot'); setUrl(null); setPan({ x: 0, y: 0 }); setSrc(client.snapshotSource()); };
   const onFail = useCallback(() => setMode('failed'), []);
   const onReady = useCallback(() => setMode('live'), []);
   const playing = mode === 'live' || mode === 'connecting';
@@ -92,11 +95,13 @@ export default function Camera() {
   return (
     <Screen bare>
       <View style={FRAME}>
-        {playing && !isDemo && url ? <Player key={attempt} url={url} headers={client.liveHeaders} onFail={onFail} onReady={onReady} />
-          : <Image source={src} resizeMode="cover" style={{
-            width: '100%', height: '100%',
-            ...(isDemo && mode === 'live' ? { transform: [{ scale: 1.5 }, { translateX: -pan.x * 40 }, { translateY: -pan.y * 24 }] } : null),
-          }} />}
+        <View style={{ width: '100%', height: '100%', transform: [{ scale: zoom }] }}>
+          {playing && !isDemo && url ? <Player key={attempt} url={url} headers={client.liveHeaders} onFail={onFail} onReady={onReady} />
+            : <Image source={src} resizeMode="cover" style={{
+              width: '100%', height: '100%',
+              ...(isDemo && mode === 'live' ? { transform: [{ scale: 1.5 }, { translateX: -pan.x * 40 }, { translateY: -pan.y * 24 }] } : null),
+            }} />}
+        </View>
         {mode === 'connecting' && (
           <View style={{ ...StyleAbs, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
             <ActivityIndicator color={colors.primary} />
@@ -110,6 +115,13 @@ export default function Camera() {
           </View>
         )}
         <Overlay live={mode === 'live'} tz={st?.timezone} />
+        {mode === 'live' && (
+          <View style={{ position: 'absolute', right: 10, bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 22, padding: 4 }}>
+            <IconButton icon="magnify-minus-outline" size={34} label="Zoom out" onPress={() => setZoomIdx(i => Math.max(0, i - 1))} />
+            <T v="smallStrong" color="#fff" style={{ minWidth: 34, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{zoom}×</T>
+            <IconButton icon="magnify-plus-outline" size={34} label="Zoom in" onPress={() => setZoomIdx(i => Math.min(ZOOMS.length - 1, i + 1))} />
+          </View>
+        )}
       </View>
 
       <View style={{ flexDirection: 'row', gap: 12 }}>
